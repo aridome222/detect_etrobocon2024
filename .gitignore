@@ -18,3 +18,5 @@ video/*
 
 # 画像を入れるディレクトリ
 fig_image*/
+train_data*/
+fig_data*/

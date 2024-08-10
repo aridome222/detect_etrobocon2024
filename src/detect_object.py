@@ -9,7 +9,7 @@ NOTE:
 
 参考コード:
     https://github.com/ultralytics/yolov5
-@author: kawanoichi
+@author: aridome222
 """
 
 import torch
@@ -40,8 +40,7 @@ class DetectObject():
     __IMG_SIZE = (640, 480)
 
     def __init__(self,
-                 weights=YOLO_PATH/'learned_fig_weight_ver2.pt',
-                 #  weights=YOLO_PATH/'learned_fig_weight.pt',
+                 weights=YOLO_PATH/'learned_fig_weight.pt',
                  label_data=YOLO_PATH/'fig_label.yaml',
                  conf_thres=0.6,
                  iou_thres=0.45,
@@ -191,11 +190,41 @@ class DetectObject():
         """
         return objects.tolist()
 
+    def process_images_in_directory(self, dir_path, img_exts=("jpg", "jpeg", "png")):
+        """ディレクトリ内の全画像に対して物体検出を行う関数.
+
+        Args:
+            dir_path(str): 物体検出を行う画像が格納されているディレクトリパス
+            img_exts(tuple): 画像の拡張子
+        """
+        import glob
+        from natsort import natsorted
+
+        # ディレクトリ内の画像を取得
+        img_paths = []
+        for ext in img_exts:
+            img_paths.extend(glob.glob(os.path.join(dir_path, f"*.{ext}")))
+
+        # 自然順ソートを行う
+        img_paths = natsorted(img_paths)
+
+        # 画像ごとに物体検出を実行
+        for img_path in img_paths:
+            base_name = os.path.basename(img_path)
+            name, ext = os.path.splitext(base_name)
+            save_path = os.path.join(IMAGE_DIR_PATH, f"detect_{name}{ext}")
+            objects = self.detect_object(img_path, save_path)
+            print("objects\n", objects)
+            print(name, " 完了\n")
+
 
 if __name__ == '__main__':
     """作業用.
     $ poetry run python ./src/detect_object.py
         --img_path fig_image/test_image.png
+
+    $ poetry run python ./src/detect_object.py
+        --dir_path train_data/
     """
     import argparse
     save_path = os.path.join(str(IMAGE_DIR_PATH), "detect_test_image.png")
@@ -203,10 +232,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="リアカメラに関するプログラム")
 
     parser.add_argument("-wpath", "--weights", type=str,
-                        default=YOLO_PATH/'learned_fig_weight.pt',
+                        default=YOLO_PATH/'learned_fig_weight_ver2.pt',
+                        # default=YOLO_PATH/'learned_fig_weight.pt',
                         help='重みファイルパス')
     parser.add_argument("-label", "--label_data", type=str,
-                        default=YOLO_PATH/'fig_label.yaml',
+                        # default=YOLO_PATH/'label_data.yaml',
+                        # default=YOLO_PATH/'fig_label.yaml',
+                        default=YOLO_PATH/'images640.yaml',
                         help='ラベルを記述したファイルパス')
     parser.add_argument("-conf", "--conf_thres", type=int,
                         default=0.6, help='信頼度閾値')
@@ -220,17 +252,32 @@ if __name__ == '__main__':
                         default=IMAGE_DIR_PATH/'FigA_1.png', help='入力画像')
     parser.add_argument("-spath", "--save_path", type=str,
                         default=save_path, help='検出画像の保存先. Noneの場合保存しない')
+    parser.add_argument("-dir", "--dir_path", type=str,
+                        default=None, help='入力画像を格納したディレクトリパス')
     args = parser.parse_args()
 
-    d = DetectObject(args.weights,
-                     args.label_data,
-                     args.conf_thres,
-                     args.iou_thres,
-                     args.max_det,
-                     args.line_thickness,
-                     args.stride)
+    if args.dir_path:
+        # ディレクトリ内の複数の画像に対して推論を行う
+        d = DetectObject(args.weights,
+                         args.label_data,
+                         args.conf_thres,
+                         args.iou_thres,
+                         args.max_det,
+                         args.line_thickness,
+                         args.stride)
+        
+        d.process_images_in_directory(args.dir_path)
+        print("すべて完了")
+    else:
+        # 単一の画像に対して推論を行う
+        d = DetectObject(args.weights,
+                         args.label_data,
+                         args.conf_thres,
+                         args.iou_thres,
+                         args.max_det,
+                         args.line_thickness,
+                         args.stride)
 
-    objects = d.detect_object(args.img_path, args.save_path)
-    print("objects\n", objects)
-
-    print("完了")
+        objects = d.detect_object(args.img_path, save_path)
+        print("objects\n", objects)
+        print("完了")

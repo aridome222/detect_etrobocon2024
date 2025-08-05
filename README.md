@@ -29,3 +29,12 @@
 
 ## Authors
 KatLabメンバー, 宮崎大学片山徹郎研究室
+
+## ドキュメント
+- googleドライブ2025
+
+https://drive.google.com/drive/folders/1CBBRfwP_5yLCHjqhK2SqGzhYLoWg2B6F
+
+- 学習・推論の仕方
+
+https://docs.google.com/document/d/1g1SEieT2ti44yPkRXRR6tWimPEGLLQpM/edit
